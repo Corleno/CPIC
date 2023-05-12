@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from dca import DynamicalComponentsAnalysis as DCA
 from utils.plotting import style
 import pickle
+import argparse
 
 
 def gen_lorenz_system(T, integration_dt=0.005):
@@ -242,10 +243,14 @@ def generate_syn(T, N, noise_dim, snr_vals, num_samples=10000, random_seed=42):
 
 
 if __name__ == "__main__":
-    seed = 22 # original seed = 42
+    parser = argparse.ArgumentParser(description='synthetic data generation.')
+    parser.add_argument('--seed', type=int, default=22) # original seed = 42
+    parser.add_argument('--RESULTS_FILENAME', type=str, default="../data/lorenz/lorenz_exploration.hdf5", help="the files can be "
+                                                                                                               "../data/lorenz/lorenz_exploration.hdf5 or ../data/lorenz/lorenz_results.hdf5")
+    args = parser.parse_args()
+    seed = args.seed
     np.random.seed(seed)
-    # RESULTS_FILENAME = "../data/lorenz/lorenz_results.hdf5"
-    RESULTS_FILENAME = "../data/lorenz/lorenz_exploration.hdf5"
+    RESULTS_FILENAME = args.RESULTS_FILENAME
     do_vis = False
 
     #Set parameters
@@ -258,7 +263,7 @@ if __name__ == "__main__":
         snr_vals = np.logspace(-3.0, -1.0, num=10)
 
     # generate data
-    # generate_syn(T, N, noise_dim, snr_vals, random_seed=seed)
+    generate_syn(T, N, noise_dim, snr_vals, random_seed=seed)
 
     # load data and plot
     with h5py.File(RESULTS_FILENAME, "r") as f:
