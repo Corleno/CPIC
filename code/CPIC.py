@@ -253,10 +253,15 @@ def estimate_mutual_information(estimator, x, y, critic_fn=None, baseline_fn=Non
 
 
 class CPIC(nn.Module):
-    def __init__(self, xdim, ydim, mi_params, critic_params, baseline_params, T=4, beta=1e-3, beta1=1, beta2=1, hidden_dim=256,
+    def __init__(self, xdim, ydim, mi_params, critic_params, baseline_params, T=4, beta=1e-3, beta1=1, beta2=0, hidden_dim=256,
                  deterministic=False, linear_encoding=True, init_weights=None, device='cuda:0', critic_params_YX=None, predictive_space="latent",
                  regularization_weight=0):
         super(CPIC, self).__init__()
+        """
+        beta: weight for the compress information.
+        beta1: weight for the predictive information.
+        beta2: weight for the I_YX information between encode past and future.
+        """
 
         self.predictive_space = predictive_space
         self.beta = beta

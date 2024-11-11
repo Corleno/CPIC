@@ -218,6 +218,9 @@ if __name__ == "__main__":
     elif args.config == 'm1_deterministic_infonce_alt':
         config_file = 'config/config_m1_deterministic_infonce_alt.ini'
         ydims = np.array([5]).astype(int)
+    elif args.config == 'm1_stochastic_infonce_alt_v2':
+        config_file = 'config/config_m1_stochastic_infonce_alt_v2.ini'
+        ydims = np.array([5]).astype(int)
     elif args.config == 'hc_stochastic_infonce':
         config_file = 'config/config_hc_stochastic_infonce.ini'
         ydims = np.array([5]).astype(int)
@@ -226,6 +229,9 @@ if __name__ == "__main__":
         ydims = np.array([5]).astype(int)
     elif args.config == 'hc_deterministic_infonce_alt':
         config_file = 'config/config_hc_deterministic_infonce_alt.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'hc_stochastic_infornce_alt_v2':
+        config_file = 'config/config_hc_stochastic_infonce_alt_v2.ini'
         ydims = np.array([5]).astype(int)
     elif args.config == 'temp_stochastic_infonce':
         config_file = 'config/config_temp_stochastic_infonce.ini'
@@ -288,17 +294,15 @@ if __name__ == "__main__":
     device = cfg.get('Training', 'device')
     lr = cfg.getfloat('Training', 'lr')
 
-    if args.config == "m1_stochastic_infonce" or args.config == "m1_stochastic_infonce_alt" \
-            or args.config == "m1_deterministic_infonce_alt":
-        # M1 = data_util.load_sabes_data('/home/fan/Data/M1/indy_20160627_01.mat')
-        M1 = data_util.load_sabes_data('/home/rui/Data/M1/indy_20160627_01.mat')
+    if args.config.startswith("m1"):
+        # M1 = data_util.load_sabes_data('/home/rui/Data/M1/indy_20160627_01.mat')
+        M1 = data_util.load_sabes_data('data/M1/indy_20160627_01.mat')
         X, Y = M1['M1'], M1['cursor']
         good_ts = None
         standardize_Y = False
-    if args.config == "hc_stochastic_infonce" or args.config == "hc_stochastic_infonce_alt"\
-            or args.config == "hc_deterministic_infonce_alt":
-        # HC = data_util.load_kording_paper_data('/home/fan/Data/HC/example_data_hc.pickle')
-        HC = data_util.load_kording_paper_data('/home/rui/Data/HC/example_data_hc.pickle')
+    if args.config.startswith('hc'):
+        # HC = data_util.load_kording_paper_data('/home/rui/Data/HC/example_data_hc.pickle')
+        HC = data_util.load_kording_paper_data('data/HC/example_data_hc.pickle')
         X, Y = HC['neural'], HC['loc']
         good_ts = 22000
         # good_ts = None
