@@ -97,7 +97,7 @@ def linear_decode_r2(X_train, Y_train, X_test, Y_test, decoding_window=1, offset
     return r2
 
 
-def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
+def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window, X_train=None, X_test=None, Y_test=None, Y_train=None,
                       n_init=1, verbose=False, Kernel=None, xdim=None, beta=1e-3, beta1=1, beta2=0, good_ts=None,
                       standardize_Y=False, train_test_ratio=0.8, regularization_weight=0):
     """
@@ -117,21 +117,28 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
     results_r2 = np.zeros(results_r2_size)
     results_MI = np.zeros(results_MI_size)
     min_std = 1e-6
-    good_cols = (X.std(axis=0) > min_std)
-    X = X[:, good_cols]
-    if good_ts is not None:
-        X = X[:good_ts]
-        Y = Y[:good_ts]
+
+    if X_train is not None and X_test is not None and Y_train is not None and Y_test is not None:
+        pass
+    elif X is not None and Y is not None:
+        print("Generate X_train, X_test, Y_train, Y_test from X and Y")
+        good_cols = (X.std(axis=0) > min_std)
+        X = X[:, good_cols]
+        if good_ts is not None:
+            X = X[:good_ts]
+            Y = Y[:good_ts]
+
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+    else:
+        raise ValueError("Must provide either (X_train, X_test, Y_train, Y_test) or (X, Y)")
 
     if Kernel is not None:
         xdim = int(xdim + xdim * (xdim + 1) / 2)  # polynomial
-
-    n = X.shape[0]
-    n_train = int(n * train_test_ratio)
-    X_train = X[:n_train]
-    X_test = X[n_train:]
-    Y_train = Y[:n_train]
-    Y_test = Y[n_train:]
 
     if Kernel is not None:
         X_train = [Kernel(Xi) for Xi in X_train]
@@ -140,7 +147,9 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
     # mean-center X and Y
     X_mean = np.concatenate(X_train).mean(axis=0, keepdims=True)
     X_train_ctd = [Xi - X_mean for Xi in X_train]
-    X_train_ctd = [np.stack(X_train_ctd)]
+    X_train_ctd = np.stack(X_train_ctd)
+    if X_train_ctd.ndim == 2:
+        X_train_ctd = [X_train_ctd]
     X_test_ctd = X_test - X_mean
     if standardize_Y:
         Y_mean = np.concatenate(Y_train).mean(axis=0, keepdims=True)
@@ -148,7 +157,9 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
         Y_test_ctd = Y_test - Y_mean
         Y_train = Y_train_ctd
         Y_test = Y_test_ctd
-    Y_train = [np.stack(Y_train)]
+    Y_train = np.stack(Y_train)
+    if Y_train.ndim == 2:
+        Y_train = [Y_train]
 
     # loop over dimensionalities
     for dim_idx in range(len(dim_vals)):
@@ -156,6 +167,15 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
         if verbose:
             print("dim", dim_idx + 1, "of", len(dim_vals))
 
+        # No compression
+        results_original_r2 = np.zeros(len(offset_vals))
+        for offset_idx in range(len(offset_vals)):
+            offset = offset_vals[offset_idx]
+            r2 = linear_decode_r2(X_train, Y_train, X_test, Y_test, decoding_window=decoding_window, offset=offset)
+            results_original_r2[offset_idx] = r2
+        print("Original data, R2: {}".format(results_original_r2))
+        import pdb; pdb.set_trace()
+        
         # loop over T_pi vals
         for T_pi_idx in range(len(T_pi_vals)):
             T_pi = T_pi_vals[T_pi_idx]
@@ -170,7 +190,6 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
             train_data = PastFutureDataset(X_train_ctd, window_size=T_pi)
             train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-            # import pdb; pdb.set_trace()
             CPIC, I_compress, I_predictive = train_CPIC(beta, xdim, dim, mi_params, critic_params, baseline_params, num_epochs,
                               train_dataloader, T=T_pi,
                               signiture=args.config, deterministic=deterministic, init_weights=init_weights, lr=lr,
@@ -182,8 +201,8 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window,
             results_MI[dim_idx, T_pi_idx, 1] = I_predictive
 
             # encode train data and test data via CPIC
-            X_train_cpic = [CPIC.encode(torch.from_numpy(Xi).to(torch.float).to(device)) for Xi in X_train_ctd]
-            X_train_cpic = [Xi.cpu().detach().numpy() for Xi in X_train_cpic]
+            X_train_cpic = CPIC.encode(torch.from_numpy(X_train_ctd).to(torch.float).to(device))
+            X_train_cpic = X_train_cpic.cpu().detach().numpy() 
             # X_train_dca = [np.dot(Xi, init_weights) for Xi in X_train_ctd]
             X_test_cpic = CPIC.encode(torch.from_numpy(X_test_ctd).to(torch.float).to(device))
             X_test_cpic = X_test_cpic.cpu().detach().numpy()
@@ -230,7 +249,7 @@ if __name__ == "__main__":
     elif args.config == 'hc_deterministic_infonce_alt':
         config_file = 'config/config_hc_deterministic_infonce_alt.ini'
         ydims = np.array([5]).astype(int)
-    elif args.config == 'hc_stochastic_infornce_alt_v2':
+    elif args.config == 'hc_stochastic_infonce_alt_v2':
         config_file = 'config/config_hc_stochastic_infonce_alt_v2.ini'
         ydims = np.array([5]).astype(int)
     elif args.config == 'temp_stochastic_infonce':
@@ -251,6 +270,12 @@ if __name__ == "__main__":
     elif args.config == 'ms_deterministic_infonce_alt':
         config_file = 'config/config_ms_deterministic_infonce_alt.ini'
         ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_stochastic_infonce_alt_v2':
+        config_file = 'config/config_mc_maze_stochastic_infonce_alt_v2.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_stochastic_infonce_alt_v2_cond0':
+        config_file = 'config/config_mc_maze_stochastic_infonce_alt_v2_cond0.ini'
+        ydims = np.array([5,10,20,40]).astype(int)
     else:
         raise ValueError("{} has not been implemented!".format(args.config))
 
@@ -270,7 +295,6 @@ if __name__ == "__main__":
     Ts = cfg.get('Hyperparameters', 'T')
     Ts = Ts.split(' ')
     Ts = [int(T) for T in Ts]
-    # import pdb; pdb.set_trace()
     hidden_dim = cfg.getint('Hyperparameters', 'hidden_dim')
 
     estimator_compress = cfg.get('Hyperparameters', 'estimator_compress')
@@ -293,6 +317,8 @@ if __name__ == "__main__":
     do_dca_init = cfg.getboolean('Training', 'do_dca_init')
     device = cfg.get('Training', 'device')
     lr = cfg.getfloat('Training', 'lr')
+
+    X_train = None; X_test = None; Y_train = None; Y_test = None
 
     if args.config.startswith("m1"):
         # M1 = data_util.load_sabes_data('/home/rui/Data/M1/indy_20160627_01.mat')
@@ -320,6 +346,84 @@ if __name__ == "__main__":
         X, Y = ms, ms
         good_ts = None
         standardize_Y = True
+    if args.config == "mc_maze_stochastic_infonce_alt_v2_cond0":
+        # !pip install git+https://github.com/neurallatents/nlb_tools.git
+        from nlb_tools.nwb_interface import NWBDataset
+        ## Load dataset
+        ## Initial mc_maze data
+        mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        mc_maze.smooth_spk(50, name='smth_50')
+
+        ## generate data for Cond0
+        conds = mc_maze.trial_info.set_index(['trial_type', 'trial_version']).index.unique().tolist()
+        cond = conds[0]
+        import pdb; pdb.set_trace()
+        # mask = np.all(mc_maze.trial_info[['trial_type', 'trial_version']] == cond, axis=1)
+        # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450), ignored_trials=(~mask))
+        # t = np.arange(-50, 450, mc_maze.bin_width)
+        # rates = []
+        # vels = []
+        # for _, trial in trial_data.groupby('trial_id'):
+        #     trial_spike = trial['spikes'].to_numpy()
+        #     trial_vel = trial['hand_vel'].to_numpy()
+        #     rates.append(trial_spike)
+        #     vels.append(trial_vel)
+        # rates = np.stack(rates) # batch_size, time_stamps, neurons
+        # vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+        # import pickle
+        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel_cond0.pickle", "wb") as f:
+        #     pickle.dump({"rates": rates, "vels": vels}, f)
+
+        with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel_cond0.pickle", "rb") as f:
+            data = pickle.load(f)
+            rates, vels = data["rates"], data["vels"]
+        X, Y = rates, vels
+        train_test_ratio = 0.8
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        good_ts = None
+        standardize_Y = False
+    if args.config == "mc_maze_stochastic_infonce_alt_v2":
+        # !pip install git+https://github.com/neurallatents/nlb_tools.git
+        # from nlb_tools.nwb_interface import NWBDataset
+        ## Load dataset
+        ## Initial mc_maze data
+        # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        
+        ## generate data for all
+        # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
+        # t = np.arange(-50, 450, mc_maze.bin_width)
+        # rates = []
+        # vels = []
+        # for _, trial in trial_data.groupby('trial_id'):
+        #     trial_spike = trial['spikes'].to_numpy()
+        #     trial_vel = trial['hand_vel'].to_numpy()
+        #     rates.append(trial_spike)
+        #     vels.append(trial_vel)
+        # rates = np.stack(rates) # batch_size, time_stamps, neurons
+        # vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+        # import pickle
+        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "wb") as f:
+        #     pickle.dump({"rates": rates, "vels": vels}, f)
+        with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "rb") as f:
+            data = pickle.load(f)
+            rates, vels = data["rates"], data["vels"]
+        
+        X, Y = rates, vels
+        train_test_ratio = 0.8
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+
+        good_ts = None
+        standardize_Y = True
 
     T_pi_vals = np.array(Ts)
     offsets = np.array([5, 10, 15])
@@ -342,6 +446,7 @@ if __name__ == "__main__":
     for ydim in ydims:
         regularzation_weight = 0
         result_r2, result_MI = run_analysis_cpic(X, Y, T_pi_vals, dim_vals=[ydim], offset_vals=offsets, decoding_window=win,
+                          X_train=X_train, X_test=X_test, Y_train=Y_train, Y_test=Y_test,
                           n_init=n_init, verbose=True, Kernel=Kernel, xdim=xdim, beta=beta, beta1=beta1, beta2=beta2,
                           good_ts=good_ts, standardize_Y=standardize_Y, regularization_weight=regularzation_weight)
 
