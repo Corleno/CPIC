@@ -329,6 +329,7 @@ if __name__ == "__main__":
                           n_init=n_init, verbose=True, Kernel=Kernel, xdim=xdim, beta=beta, beta1=beta1, beta2=beta2,
                           critic_params=critic_params, critic_params_YX=critic_params_YX, good_ts=good_ts)
 
-        with open(saved_root + "/result_dim{}.pkl".format(ydim), "wb") as f:
+        saved_file = "result_dim{}.pkl".format(ydim) if linear_encoding else "result_dim{}_nonlinear.pkl".format(ydim)
+        with open(saved_root + "/" + saved_file, "wb") as f:
             pickle.dump(result, f)
         # import pdb; pdb.set_trace()

@@ -99,7 +99,7 @@ def linear_decode_r2(X_train, Y_train, X_test, Y_test, decoding_window=1, offset
 
 def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window, X_train=None, X_test=None, Y_test=None, Y_train=None,
                       n_init=1, verbose=False, Kernel=None, xdim=None, beta=1e-3, beta1=1, beta2=0, good_ts=None,
-                      standardize_Y=False, train_test_ratio=0.8, regularization_weight=0):
+                      standardize_Y=False, train_test_ratio=0.8, regularization_weight=0, linear_encoding=True):
     """
     :param X: N x XDim
     :param Y: N x YDim
@@ -181,7 +181,7 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window, X
             critic_params = {"x_dim": T_pi * ydim, "y_dim": T_pi * ydim, "hidden_dim": hidden_dim}
             critic_params_YX = {"x_dim": T_pi * ydim, "y_dim": T_pi * xdim, "hidden_dim": hidden_dim}
             # train data
-            if do_dca_init:
+            if do_dca_init and linear_encoding:
                 init_weights = DCA_init(np.concatenate(X_train_ctd, axis=0), T=T_pi, d=dim, n_init=n_init)
             else:
                 init_weights = None
@@ -191,7 +191,8 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window, X
 
             CPIC, I_compress, I_predictive = train_CPIC(beta, xdim, dim, mi_params, critic_params, baseline_params, num_epochs,
                               train_dataloader, T=T_pi,
-                              signiture=args.config, deterministic=deterministic, init_weights=init_weights, lr=lr,
+                              signiture=args.config, deterministic=deterministic, linear_encoding=linear_encoding, 
+                              init_weights=init_weights, lr=lr,
                               num_early_stop=num_early_stop, device=device, beta1=beta1, beta2=beta2,
                               critic_params_YX=critic_params_YX, regularization_weight=regularization_weight,
                               return_mutual_information=True)
@@ -222,6 +223,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CPIC for real data.')
     parser.add_argument('--config', type=str, default="hc_stochastic_infonce_alt")
     parser.add_argument('--model', type=str, default="CPIC")
+    parser.add_argument('--nonlinear_encoding', action='store_true')
     args = parser.parse_args()
     if args.model == "CPIC":
         from CPIC import PastFutureDataset, train_CPIC, DCA_init, Polynomial_expand
@@ -271,6 +273,12 @@ if __name__ == "__main__":
         ydims = np.array([5]).astype(int)
     elif args.config == 'mc_maze_stochastic_infonce_alt_v2':
         config_file = 'config/config_mc_maze_stochastic_infonce_alt_v2.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_deterministic_infonce_alt':
+        config_file = 'config/config_mc_maze_deterministic_infonce_alt.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_stochastic_infonce_alt':
+        config_file = 'config/config_mc_maze_stochastic_infonce_alt.ini'
         ydims = np.array([5]).astype(int)
     elif args.config == 'mc_maze_stochastic_infonce_alt_v2_cond0':
         config_file = 'config/config_mc_maze_stochastic_infonce_alt_v2_cond0.ini'
@@ -345,18 +353,19 @@ if __name__ == "__main__":
         X, Y = ms, ms
         good_ts = None
         standardize_Y = True
-    if args.config == "mc_maze_stochastic_infonce_alt_v2_cond0":
-        from nlb_tools.nwb_interface import NWBDataset
+    if args.config.startswith("mc_maze"):  # only consider single condition for mc_maze.
+        ### INITIALIZE DATA FOR THE FIRST TIME
+        # from nlb_tools.nwb_interface import NWBDataset
         ## Load dataset
         ## Initial mc_maze data
-        # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
-        mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
+        # # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        # mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
         
-        mc_maze.smooth_spk(50, name='smth_50')
+        # mc_maze.smooth_spk(50, name='smth_50')
 
         ## generate data for Cond0
-        conds = mc_maze.trial_info.set_index(['trial_type', 'trial_version']).index.unique().tolist()
-        cond = conds[0]
+        # conds = mc_maze.trial_info.set_index(['trial_type', 'trial_version']).index.unique().tolist()
+        # cond = conds[0]
         ###spikes_rate for cond0
         # mask = np.all(mc_maze.trial_info[['trial_type', 'trial_version']] == cond, axis=1)
         # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450), ignored_trials=(~mask))
@@ -409,56 +418,57 @@ if __name__ == "__main__":
         Y_test = Y[n_train:]
         good_ts = None
         standardize_Y = False
-    if args.config == "mc_maze_stochastic_infonce_alt_v2":
-        # !pip install git+https://github.com/neurallatents/nlb_tools.git
-        from nlb_tools.nwb_interface import NWBDataset
-        ## Load dataset
-        ## Initial mc_maze data
-        # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
-        mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
+    
+    # if args.config == "mc_maze_stochastic_infonce_alt_v2":
+    #     # !pip install git+https://github.com/neurallatents/nlb_tools.git
+    #     from nlb_tools.nwb_interface import NWBDataset
+    #     ## Load dataset
+    #     ## Initial mc_maze data
+    #     # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+    #     mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
         
-        mc_maze.smooth_spk(50, name='smth_50')
+    #     mc_maze.smooth_spk(50, name='smth_50')
 
         
-        ## generate data for all
-        # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
-        # t = np.arange(-50, 450, mc_maze.bin_width)
-        # rates = []
-        # vels = []
-        # for _, trial in trial_data.groupby('trial_id'):
-        #     trial_spike = trial['spikes'].to_numpy()
-        #     trial_vel = trial['hand_vel'].to_numpy()
-        #     rates.append(trial_spike)
-        #     vels.append(trial_vel)
-        # rates = np.stack(rates) # batch_size, time_stamps, neurons
-        # vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
-        # import pickle
-        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "wb") as f:
-        #     pickle.dump({"rates": rates, "vels": vels}, f)
+    #     ## generate data for all
+    #     # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
+    #     # t = np.arange(-50, 450, mc_maze.bin_width)
+    #     # rates = []
+    #     # vels = []
+    #     # for _, trial in trial_data.groupby('trial_id'):
+    #     #     trial_spike = trial['spikes'].to_numpy()
+    #     #     trial_vel = trial['hand_vel'].to_numpy()
+    #     #     rates.append(trial_spike)
+    #     #     vels.append(trial_vel)
+    #     # rates = np.stack(rates) # batch_size, time_stamps, neurons
+    #     # vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+    #     # import pickle
+    #     # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "wb") as f:
+    #     #     pickle.dump({"rates": rates, "vels": vels}, f)
         
-        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "rb") as f:
-        #     data = pickle.load(f)
-        #     rates, vels = data["rates"], data["vels"]
+    #     # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "rb") as f:
+    #     #     data = pickle.load(f)
+    #     #     rates, vels = data["rates"], data["vels"]
         
-        ###spikes_smth_50 for cond0
-        trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
-        t = np.arange(-50, 450, mc_maze.bin_width)
-        rates = []
-        vels = []
-        for _, trial in trial_data.groupby('trial_id'):
-            trial_spike = trial['spikes_smth_50'].to_numpy()
-            trial_vel = trial['hand_vel'].to_numpy()
-            rates.append(trial_spike)
-            vels.append(trial_vel)
-        rates = np.stack(rates) # batch_size, time_stamps, neurons
-        vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
-        import pickle
-        with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "wb") as f:
-            pickle.dump({"rates": rates, "vels": vels}, f)
+    #     ###spikes_smth_50 for cond0
+    #     trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
+    #     t = np.arange(-50, 450, mc_maze.bin_width)
+    #     rates = []
+    #     vels = []
+    #     for _, trial in trial_data.groupby('trial_id'):
+    #         trial_spike = trial['spikes_smth_50'].to_numpy()
+    #         trial_vel = trial['hand_vel'].to_numpy()
+    #         rates.append(trial_spike)
+    #         vels.append(trial_vel)
+    #     rates = np.stack(rates) # batch_size, time_stamps, neurons
+    #     vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+    #     import pickle
+    #     with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "wb") as f:
+    #         pickle.dump({"rates": rates, "vels": vels}, f)
 
-        # with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "rb") as f:
-        #     data = pickle.load(f)
-        #     rates, vels = data["rates"], data["vels"]
+    #     # with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "rb") as f:
+    #     #     data = pickle.load(f)
+    #     #     rates, vels = data["rates"], data["vels"]
 
         X, Y = rates, vels
         train_test_ratio = 0.8
@@ -490,13 +500,19 @@ if __name__ == "__main__":
     else:
         raise ValueError("This kernel is not available.")
 
+    if args.nonlinear_encoding:
+        linear_encoding=False
+    else:
+        linear_encoding=True
+
     for ydim in ydims:
         regularzation_weight = 0
         result_r2, result_MI = run_analysis_cpic(X, Y, T_pi_vals, dim_vals=[ydim], offset_vals=offsets, decoding_window=win,
                           X_train=X_train, X_test=X_test, Y_train=Y_train, Y_test=Y_test,
                           n_init=n_init, verbose=True, Kernel=Kernel, xdim=xdim, beta=beta, beta1=beta1, beta2=beta2,
-                          good_ts=good_ts, standardize_Y=standardize_Y, regularization_weight=regularzation_weight)
+                          good_ts=good_ts, standardize_Y=standardize_Y, regularization_weight=regularzation_weight, linear_encoding=linear_encoding)
 
-        with open(saved_root + "/result_dim{}_standard.pkl".format(ydim), "wb") as f:
+        saved_file = "result_dim{}.pkl".format(ydim) if linear_encoding else "result_dim{}_nonlinear.pkl".format(ydim)
+        with open(saved_root + "/" + saved_file, "wb") as f:
             pickle.dump([result_r2, result_MI], f)
         # import pdb; pdb.set_trace()
