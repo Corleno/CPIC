@@ -8,3 +8,5 @@ pandas
 tqdm
 tensorboardX
 matplotlib
+nlb-tools
+# !pip install git+https://github.com/neurallatents/nlb_tools.git

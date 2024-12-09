@@ -167,14 +167,13 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, decoding_window, X
         if verbose:
             print("dim", dim_idx + 1, "of", len(dim_vals))
 
-        # No compression
-        results_original_r2 = np.zeros(len(offset_vals))
-        for offset_idx in range(len(offset_vals)):
-            offset = offset_vals[offset_idx]
-            r2 = linear_decode_r2(X_train, Y_train, X_test, Y_test, decoding_window=decoding_window, offset=offset)
-            results_original_r2[offset_idx] = r2
-        print("Original data, R2: {}".format(results_original_r2))
-        import pdb; pdb.set_trace()
+        # # No compression
+        # results_original_r2 = np.zeros(len(offset_vals))
+        # for offset_idx in range(len(offset_vals)):
+        #     offset = offset_vals[offset_idx]
+        #     r2 = linear_decode_r2(X_train, Y_train, X_test, Y_test, decoding_window=decoding_window, offset=offset)
+        #     results_original_r2[offset_idx] = r2
+        # print("Original data, R2: {}".format(results_original_r2))
         
         # loop over T_pi vals
         for T_pi_idx in range(len(T_pi_vals)):
@@ -347,17 +346,18 @@ if __name__ == "__main__":
         good_ts = None
         standardize_Y = True
     if args.config == "mc_maze_stochastic_infonce_alt_v2_cond0":
-        # !pip install git+https://github.com/neurallatents/nlb_tools.git
         from nlb_tools.nwb_interface import NWBDataset
         ## Load dataset
         ## Initial mc_maze data
-        mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
+        
         mc_maze.smooth_spk(50, name='smth_50')
 
         ## generate data for Cond0
         conds = mc_maze.trial_info.set_index(['trial_type', 'trial_version']).index.unique().tolist()
         cond = conds[0]
-        import pdb; pdb.set_trace()
+        ###spikes_rate for cond0
         # mask = np.all(mc_maze.trial_info[['trial_type', 'trial_version']] == cond, axis=1)
         # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450), ignored_trials=(~mask))
         # t = np.arange(-50, 450, mc_maze.bin_width)
@@ -374,7 +374,29 @@ if __name__ == "__main__":
         # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel_cond0.pickle", "wb") as f:
         #     pickle.dump({"rates": rates, "vels": vels}, f)
 
-        with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel_cond0.pickle", "rb") as f:
+        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel_cond0.pickle", "rb") as f:
+        #     data = pickle.load(f)
+        #     rates, vels = data["rates"], data["vels"]
+
+
+        ###spikes_smth_50 for cond0
+        # mask = np.all(mc_maze.trial_info[['trial_type', 'trial_version']] == cond, axis=1)
+        # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450), ignored_trials=(~mask))
+        # t = np.arange(-50, 450, mc_maze.bin_width)
+        # rates = []
+        # vels = []
+        # for _, trial in trial_data.groupby('trial_id'):
+        #     trial_spike = trial['spikes_smth_50'].to_numpy()
+        #     trial_vel = trial['hand_vel'].to_numpy()
+        #     rates.append(trial_spike)
+        #     vels.append(trial_vel)
+        # rates = np.stack(rates) # batch_size, time_stamps, neurons
+        # vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+        # import pickle
+        # with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel_cond0.pickle", "wb") as f:
+        #     pickle.dump({"rates": rates, "vels": vels}, f)
+
+        with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel_cond0.pickle", "rb") as f:
             data = pickle.load(f)
             rates, vels = data["rates"], data["vels"]
         X, Y = rates, vels
@@ -389,10 +411,14 @@ if __name__ == "__main__":
         standardize_Y = False
     if args.config == "mc_maze_stochastic_infonce_alt_v2":
         # !pip install git+https://github.com/neurallatents/nlb_tools.git
-        # from nlb_tools.nwb_interface import NWBDataset
+        from nlb_tools.nwb_interface import NWBDataset
         ## Load dataset
         ## Initial mc_maze data
         # mc_maze = NWBDataset("/mnt/d/Data/neural_latents/mc_maze/000128/sub-Jenkins/", "*train", split_heldout=False)
+        mc_maze = NWBDataset("/home/rmmeng/data/neural/000128/sub-Jenkins/", "*train", split_heldout=False)
+        
+        mc_maze.smooth_spk(50, name='smth_50')
+
         
         ## generate data for all
         # trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
@@ -409,10 +435,31 @@ if __name__ == "__main__":
         # import pickle
         # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "wb") as f:
         #     pickle.dump({"rates": rates, "vels": vels}, f)
-        with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "rb") as f:
-            data = pickle.load(f)
-            rates, vels = data["rates"], data["vels"]
         
+        # with open("/mnt/d/Data/neural_latents/mc_maze/mc_maze_nerual_vs_handvel.pickle", "rb") as f:
+        #     data = pickle.load(f)
+        #     rates, vels = data["rates"], data["vels"]
+        
+        ###spikes_smth_50 for cond0
+        trial_data = mc_maze.make_trial_data(align_field='move_onset_time', align_range=(-50, 450))
+        t = np.arange(-50, 450, mc_maze.bin_width)
+        rates = []
+        vels = []
+        for _, trial in trial_data.groupby('trial_id'):
+            trial_spike = trial['spikes_smth_50'].to_numpy()
+            trial_vel = trial['hand_vel'].to_numpy()
+            rates.append(trial_spike)
+            vels.append(trial_vel)
+        rates = np.stack(rates) # batch_size, time_stamps, neurons
+        vels = np.stack(vels) # batch_size, time_stamps, hand_vels(x, y)
+        import pickle
+        with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "wb") as f:
+            pickle.dump({"rates": rates, "vels": vels}, f)
+
+        # with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel.pickle", "rb") as f:
+        #     data = pickle.load(f)
+        #     rates, vels = data["rates"], data["vels"]
+
         X, Y = rates, vels
         train_test_ratio = 0.8
         n = X.shape[0]

@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
+import argparse
 
 
 def summary_statistics(x, axis=0):
@@ -9,6 +9,10 @@ def summary_statistics(x, axis=0):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", type=str, default="m1", help="dataset")
+    args = parser.parse_args()
+    dataset = args.dataset
 
     m1_dims = np.array([5])
     hc_dims = np.array([5])
@@ -49,65 +53,65 @@ if __name__ == "__main__":
     #     print("ms(stochastic), dim:{}, R2s:{}".format(dim, ms_sto_infonce_R2s))
 
     # Experiments for varying window sizes:
-    for dim in m1_dims:
-        with open("res/m1_stochastic_infonce_alt_v2/result_dim{}_standard.pkl".format(dim), "rb") as f:
-            m1_sto_infonce_R2s, m1_sto_infonce_MI = pickle.load(f)
-        m1_sto_infonce_R2s = np.squeeze(m1_sto_infonce_R2s)
-        print("m1(stochastic), dim:{}, R2s:{}".format(dim, m1_sto_infonce_R2s))
-    for dim in hc_dims:
-        with open("res/hc_stochastic_infonce_alt_v2/result_dim{}_standard.pkl".format(dim), "rb") as f:
-            hc_sto_infonce_R2s, hc_sto_infonce_MI = pickle.load(f)
-        hc_sto_infonce_R2s = np.squeeze(hc_sto_infonce_R2s)
-        print("hc(stochastic), dim:{}, R2s:{}".format(dim, hc_sto_infonce_R2s))
-    mc_maze_sto_infonce_R2s_list = []
-    for dim in mc_maze_dims:
-        with open("res/mc_maze_stochastic_infonce_alt_v2_cond0/result_dim{}_standard.pkl".format(dim), "rb") as f:
-            mc_maze_sto_infonce_R2s, mc_maze_sto_infonce_MI = pickle.load(f)
-        mc_maze_sto_infonce_R2s_list.append(np.squeeze(mc_maze_sto_infonce_R2s))
-        print("mc_maze(stochastic), dim:{}, R2s:{}".format(dim, mc_maze_sto_infonce_R2s_list[-1]))
-
-    # plot trials 
-    lags = [5, 10, 15]
-    fig = plt.figure()
-    # Plot each trial with a label
-    for i in range(m1_sto_infonce_R2s.shape[0]):
-        plt.plot(m1_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
-    plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
-    plt.xlabel("Window size")
-    plt.ylabel("R2")
-    plt.title("R2 scores for M1 datasets with varying window size")
-    # Add legend to show trial labels
-    plt.legend()
-    plt.savefig("M1_R2_varying_WS.png")
-
-    # plot trials 
-    lags = [5, 10, 15]
-    fig = plt.figure()
-    # Plot each trial with a label
-    for i in range(hc_sto_infonce_R2s.shape[0]):
-        plt.plot(hc_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
-    plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
-    plt.xlabel("Window size")
-    plt.ylabel("R2")
-    plt.title("R2 scores for HC datasets with varying window size")
-    # Add legend to show trial labels
-    plt.legend()
-    plt.savefig("HC_R2_varying_WS.png")
-
-    lags = [5, 10, 15]
-    for i in range(len(mc_maze_sto_infonce_R2s_list)):
-        mc_maze_sto_infonce_R2s = mc_maze_sto_infonce_R2s_list[i]    
+    if dataset == "m1":
+        for dim in m1_dims:
+            with open("res/m1_stochastic_infonce_alt_v2/result_dim{}_standard.pkl".format(dim), "rb") as f:
+                m1_sto_infonce_R2s, m1_sto_infonce_MI = pickle.load(f)
+            m1_sto_infonce_R2s = np.squeeze(m1_sto_infonce_R2s)
+            print("m1(stochastic), dim:{}, R2s:{}".format(dim, m1_sto_infonce_R2s))
+        # plot trials 
+        lags = [5, 10, 15]
         fig = plt.figure()
         # Plot each trial with a label
-        for j in range(mc_maze_sto_infonce_R2s.shape[0]):
-            plt.plot(mc_maze_sto_infonce_R2s[j], label=f'Lag {lags[j]}')
+        for i in range(m1_sto_infonce_R2s.shape[0]):
+            plt.plot(m1_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
         plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
         plt.xlabel("Window size")
         plt.ylabel("R2")
-        plt.title("R2 scores for MC-MAZE datasets with varying window size")
+        plt.title("R2 scores for M1 datasets with varying window size")
         # Add legend to show trial labels
         plt.legend()
-        plt.savefig("MC-MAZE_R2_varying_WS_dim{}.png".format(mc_maze_dims[i]))
+        plt.savefig("fig/varying_window_sizes/M1_R2_varying_WS.png")
+    if dataset == "hc":
+        for dim in hc_dims:
+            with open("res/hc_stochastic_infonce_alt_v2/result_dim{}_standard.pkl".format(dim), "rb") as f:
+                hc_sto_infonce_R2s, hc_sto_infonce_MI = pickle.load(f)
+            hc_sto_infonce_R2s = np.squeeze(hc_sto_infonce_R2s)
+            print("hc(stochastic), dim:{}, R2s:{}".format(dim, hc_sto_infonce_R2s))
+        # plot trials 
+        lags = [5, 10, 15]
+        fig = plt.figure()
+        # Plot each trial with a label
+        for i in range(hc_sto_infonce_R2s.shape[0]):
+            plt.plot(hc_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
+        plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
+        plt.xlabel("Window size")
+        plt.ylabel("R2")
+        plt.title("R2 scores for HC datasets with varying window size")
+        # Add legend to show trial labels
+        plt.legend()
+        plt.savefig("fig/varying_window_sizes/HC_R2_varying_WS.png")
+    if dataset == "mc_maze":
+        mc_maze_sto_infonce_R2s_list = []
+        for dim in mc_maze_dims:
+            with open("res/mc_maze_stochastic_infonce_alt_v2_cond0/result_dim{}_standard.pkl".format(dim), "rb") as f:
+                mc_maze_sto_infonce_R2s, mc_maze_sto_infonce_MI = pickle.load(f)
+            mc_maze_sto_infonce_R2s_list.append(np.squeeze(mc_maze_sto_infonce_R2s))
+            print("mc_maze(stochastic), dim:{}, R2s:{}".format(dim, mc_maze_sto_infonce_R2s_list[-1]))
+        lags = [5, 10, 15]
+        for i in range(len(mc_maze_sto_infonce_R2s_list)):
+            mc_maze_sto_infonce_R2s = mc_maze_sto_infonce_R2s_list[i]    
+            fig = plt.figure()
+            # Plot each trial with a label
+            for j in range(mc_maze_sto_infonce_R2s.shape[0]):
+                plt.plot(mc_maze_sto_infonce_R2s[j], label=f'Lag {lags[j]}')
+            plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
+            plt.xlabel("Window size")
+            plt.ylabel("R2")
+            plt.title("R2 scores for MC-MAZE datasets with varying window size")
+            # Add legend to show trial labels
+            plt.legend()
+            plt.savefig("fig/varying_window_sizes/MC-MAZE_cond0_R2_varying_WS_dim{}.png".format(mc_maze_dims[i]))
 
 
     import pdb; pdb.set_trace()
