@@ -1,3 +1,5 @@
+#### Compared with real_data_experiment_standard.py, it always standerdize the Y
+
 import argparse
 from configparser import ConfigParser
 import os
@@ -102,8 +104,8 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, num_cv_folds, deco
                  critic_params_YX=None, good_ts=None):
     """
 
-    :param X:
-    :param Y:
+    :param X: feature_dim x time_stamps
+    :param Y: target_feature_dim x time_stamps
     :param T_pi_vals: window size for DCA and CPIC
     :param dim_vals: compressed dimension
     :param offset_vals: Temporal offsets for prediction (0 is same-time prediction)
@@ -115,6 +117,7 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, num_cv_folds, deco
     :return:
     """
     results_size = (num_cv_folds, len(dim_vals), len(offset_vals), len(T_pi_vals))
+    dca_results = np.zeros(results_size)
     results = np.zeros(results_size)
     min_std = 1e-6
     good_cols = (X.std(axis=0) > min_std)
@@ -123,6 +126,8 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, num_cv_folds, deco
         X = X[:good_ts]
         Y = Y[:good_ts]
 
+    # rewrite the xdim
+    xdim = X.shape[-1]
     if Kernel is not None:
         xdim = int(xdim + xdim * (xdim + 1) / 2)  # polynomial
 
@@ -154,13 +159,14 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, num_cv_folds, deco
             # loop over T_pi vals
             for T_pi_idx in range(len(T_pi_vals)):
                 T_pi = T_pi_vals[T_pi_idx]
-                critic_params = {"x_dim": T_pi * ydim, "y_dim": T_pi * ydim, "hidden_dim": hidden_dim}
-                critic_params_YX = {"x_dim": T_pi * ydim, "y_dim": T_pi * xdim, "hidden_dim": hidden_dim}
-                # train data
+
                 if do_dca_init and linear_encoding:
                     init_weights = DCA_init(np.concatenate(X_train_ctd, axis=0), T=T_pi, d=dim, n_init=n_init)
                 else:
                     init_weights = None
+
+                critic_params = {"x_dim": T_pi * ydim, "y_dim": T_pi * ydim, "hidden_dim": hidden_dim}
+                critic_params_YX = {"x_dim": T_pi * ydim, "y_dim": T_pi * xdim, "hidden_dim": hidden_dim}
 
                 train_data = PastFutureDataset(X_train_ctd, window_size=T_pi)
                 train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -176,20 +182,23 @@ def run_analysis_cpic(X, Y, T_pi_vals, dim_vals, offset_vals, num_cv_folds, deco
                 # encode train data and test data via CPIC
                 X_train_cpic = [CPIC.encode(torch.from_numpy(Xi).to(torch.float).to(device)) for Xi in X_train_ctd]
                 X_train_cpic = [Xi.cpu().detach().numpy() for Xi in X_train_cpic]
-                # X_train_dca = [np.dot(Xi, init_weights) for Xi in X_train_ctd]
                 X_test_cpic = CPIC.encode(torch.from_numpy(X_test_ctd).to(torch.float).to(device))
                 X_test_cpic = X_test_cpic.cpu().detach().numpy()
-                # X_test_dca = np.dot(X_test_ctd, init_weights)
+                if do_dca_init and linear_encoding:
+                    X_train_dca = [np.dot(Xi, init_weights) for Xi in X_train_ctd]
+                    X_test_dca = np.dot(X_test_ctd, init_weights)
+
                 ### save encoded test data
 
                 for offset_idx in range(len(offset_vals)):
                     offset = offset_vals[offset_idx]
                     r2_cpic = linear_decode_r2(X_train_cpic, Y_train_ctd, X_test_cpic, Y_test_ctd, decoding_window=decoding_window, offset=offset)
-                    # r2_dca = linear_decode_r2(X_train_dca, Y_train_ctd, X_test_dca, Y_test_ctd, decoding_window=decoding_window, offset=offset)
                     results[fold_idx, dim_idx, offset_idx, T_pi_idx] = r2_cpic
+                    if do_dca_init and linear_encoding:
+                        r2_dca = linear_decode_r2(X_train_dca, Y_train_ctd, X_test_dca, Y_test_ctd, decoding_window=decoding_window, offset=offset)
+                        dca_results[fold_idx, dim_idx, offset_idx, T_pi_idx] = r2_dca
             print("fold_idx: {}, dim_idx: {}, R2: {}".format(fold_idx, dim_vals[dim_idx], results[fold_idx, dim_idx]))
-            # import pdb; pdb.set_trace()
-    return results
+    return results, dca_results
 
 
 if __name__ == "__main__":
@@ -231,6 +240,12 @@ if __name__ == "__main__":
         ydims = np.array([5]).astype(int)
     elif args.config == 'ms_stochastic_infonce_alt':
         config_file = 'config/config_ms_stochastic_infonce_alt.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_deterministic_infonce_alt':
+        config_file = 'config/config_mc_maze_deterministic_infonce_alt.ini'
+        ydims = np.array([5]).astype(int)
+    elif args.config == 'mc_maze_stochastic_infonce_alt':
+        config_file = 'config/config_mc_maze_stochastic_infonce_alt.ini'
         ydims = np.array([5]).astype(int)
     else:
         raise ValueError("{} has not been implemented!".format(args.config))
@@ -294,6 +309,18 @@ if __name__ == "__main__":
         ms = data_util.load_accel_data('/home/rui/Data/motion_sense/A_DeviceMotion_data/std_6/sub_19.csv')
         X, Y = ms, ms
         good_ts = None
+    if args.config.startswith("mc_maze"):  
+        with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel_cond0.pickle", "rb") as f:
+            data = pickle.load(f)
+            rates, vels = data["rates"], data["vels"]
+        X, Y = rates, vels
+        good_ts = None
+
+    if X.ndim == 3:
+        assert Y.ndim == 3, "Y must be 3 dims since X has 3 dims."
+        # flatten first two dims in X and Y
+        X = X.reshape(-1, X.shape[-1])
+        Y = Y.reshape(-1, Y.shape[-1])
 
     T_pi_vals = np.array(Ts)
     offsets = np.array([5, 10, 15])
@@ -325,11 +352,11 @@ if __name__ == "__main__":
         # critic_params_YX = {"x_dim": T * ydim, "y_dim": T * xdim, "hidden_dim": hidden_dim}
         critic_params = None
         critic_params_YX = None
-        result = run_analysis_cpic(X, Y, T_pi_vals, dim_vals=[ydim], offset_vals=offsets, num_cv_folds=n_cv, decoding_window=win,
+        result, dca_result = run_analysis_cpic(X, Y, T_pi_vals, dim_vals=[ydim], offset_vals=offsets, num_cv_folds=n_cv, decoding_window=win,
                           n_init=n_init, verbose=True, Kernel=Kernel, xdim=xdim, beta=beta, beta1=beta1, beta2=beta2,
                           critic_params=critic_params, critic_params_YX=critic_params_YX, good_ts=good_ts)
 
         saved_file = "result_dim{}.pkl".format(ydim) if linear_encoding else "result_dim{}_nonlinear.pkl".format(ydim)
         with open(saved_root + "/" + saved_file, "wb") as f:
             pickle.dump(result, f)
-        # import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()

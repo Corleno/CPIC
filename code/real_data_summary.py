@@ -9,50 +9,78 @@ def summary_statistics(x, axis=0):
 
 
 if __name__ == "__main__":
-    do_suammrization_R2_CIPCs = False
+    do_suammrization_R2_CIPCs = True
     do_summarization_R2_CPIC_Baseline = False
 
     if do_suammrization_R2_CIPCs:
+        m1_dims = hc_dims = temp_dims = mc_dims = None
         # m1_dims = np.array([5, 10, 20, 30])
-        m1_dims = np.array([5])
+        # m1_dims = np.array([5])
         # hc_dims = np.array([5, 10, 15, 20])
-        hc_dims = np.array([5])
+        # hc_dims = np.array([5])
         # temp_dims = np.array([3, 4, 5, 6])
         # temp_dims = np.array([5])
+        mc_dims = np.array([5])
 
-        for dim in m1_dims:
-            with open("res/m1_stochastic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
-                m1_sto_infonce_R2s = pickle.load(f)
-            m1_sto_infonce_R2s = np.squeeze(m1_sto_infonce_R2s)
-            m1_sto_infonce_R2_mean, m1_sto_infonce_R2_std = summary_statistics(m1_sto_infonce_R2s, axis=0)
-            print("m1(stochastic), dim:{}, mean: {}, std: {}".format(dim, m1_sto_infonce_R2_mean, m1_sto_infonce_R2_std))
-            with open("res/m1_deterministic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
-                m1_det_infonce_R2s = pickle.load(f)
-            m1_det_infonce_R2s = np.squeeze(m1_det_infonce_R2s)
-            m1_det_infonce_R2_mean, m1_det_infonce_R2_std = summary_statistics(m1_det_infonce_R2s, axis=0)
-            print("m1(deterministic), dim:{}, mean: {}, std: {}".format(dim, m1_det_infonce_R2_mean, m1_det_infonce_R2_std))
-        for dim in hc_dims:
-            with open("res/hc_stochastic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
-                hc_sto_infonce_R2s = pickle.load(f)
-            hc_sto_infonce_R2s = np.squeeze(hc_sto_infonce_R2s)
-            hc_sto_infonce_R2_mean, hc_sto_infonce_R2_std = summary_statistics(hc_sto_infonce_R2s, axis=0)
-            print("hc(stochastic), dim:{}, mean: {}, std: {}".format(dim, hc_sto_infonce_R2_mean, hc_sto_infonce_R2_std))
-            with open("res/hc_deterministic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
-                hc_det_infonce_R2s = pickle.load(f)
-            hc_det_infonce_R2s = np.squeeze(hc_det_infonce_R2s)
-            hc_det_infonce_R2_mean, hc_det_infonce_R2_std = summary_statistics(hc_det_infonce_R2s, axis=0)
-            print("hc(deterministic), dim:{}, mean: {}, std: {}".format(dim, hc_det_infonce_R2_mean, hc_det_infonce_R2_std))
-        # for dim in temp_dims:
-        #     with open("res/temp_stochastic_infonce/result_dim{}.pkl".format(dim), "rb") as f:
-        #         temp_sto_infonce_R2s = pickle.load(f)
-        #     temp_sto_infonce_R2s = np.squeeze(temp_sto_infonce_R2s)
-        #     temp_sto_infonce_R2_mean, temp_sto_infonce_R2_std = summary_statistics(temp_sto_infonce_R2s, axis=0)
-        #     print("temp(stochastic), dim:{}, mean: {}, std: {}".format(dim, temp_sto_infonce_R2_mean, temp_sto_infonce_R2_std))
+        if m1_dims:
+            for dim in m1_dims:
+                with open("res/m1_stochastic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    m1_sto_infonce_R2s = pickle.load(f)
+                m1_sto_infonce_R2s = np.squeeze(m1_sto_infonce_R2s)
+                m1_sto_infonce_R2_mean, m1_sto_infonce_R2_std = summary_statistics(m1_sto_infonce_R2s, axis=0)
+                print("m1(stochastic), dim:{}, mean: {}, std: {}".format(dim, m1_sto_infonce_R2_mean, m1_sto_infonce_R2_std))
+                with open("res/m1_deterministic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    m1_det_infonce_R2s = pickle.load(f)
+                m1_det_infonce_R2s = np.squeeze(m1_det_infonce_R2s)
+                m1_det_infonce_R2_mean, m1_det_infonce_R2_std = summary_statistics(m1_det_infonce_R2s, axis=0)
+                print("m1(deterministic), dim:{}, mean: {}, std: {}".format(dim, m1_det_infonce_R2_mean, m1_det_infonce_R2_std))
+        
+        if hc_dims:
+            for dim in hc_dims:
+                with open("res/hc_stochastic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    hc_sto_infonce_R2s = pickle.load(f)
+                hc_sto_infonce_R2s = np.squeeze(hc_sto_infonce_R2s)
+                hc_sto_infonce_R2_mean, hc_sto_infonce_R2_std = summary_statistics(hc_sto_infonce_R2s, axis=0)
+                print("hc(stochastic), dim:{}, mean: {}, std: {}".format(dim, hc_sto_infonce_R2_mean, hc_sto_infonce_R2_std))
+                with open("res/hc_deterministic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    hc_det_infonce_R2s = pickle.load(f)
+                hc_det_infonce_R2s = np.squeeze(hc_det_infonce_R2s)
+                hc_det_infonce_R2_mean, hc_det_infonce_R2_std = summary_statistics(hc_det_infonce_R2s, axis=0)
+                print("hc(deterministic), dim:{}, mean: {}, std: {}".format(dim, hc_det_infonce_R2_mean, hc_det_infonce_R2_std))
+        
+        if temp_dims:
+            for dim in temp_dims:
+                with open("res/temp_stochastic_infonce/result_dim{}.pkl".format(dim), "rb") as f:
+                    temp_sto_infonce_R2s = pickle.load(f)
+                temp_sto_infonce_R2s = np.squeeze(temp_sto_infonce_R2s)
+                temp_sto_infonce_R2_mean, temp_sto_infonce_R2_std = summary_statistics(temp_sto_infonce_R2s, axis=0)
+                print("temp(stochastic), dim:{}, mean: {}, std: {}".format(dim, temp_sto_infonce_R2_mean, temp_sto_infonce_R2_std))
 
-        # m1_dims = np.array([5, 10, 20, 30])
-        # temp_dims = np.array([3, 4, 5, 6])
-        # hc_dims = np.array([5, 10, 15, 25])
-        # dims = 4
+        if mc_dims:
+            for dim in mc_dims:
+                with open("res/mc_maze_stochastic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    mc_sto_infonce_R2s = pickle.load(f)
+                mc_sto_infonce_R2s = np.squeeze(mc_sto_infonce_R2s)
+                mc_sto_infonce_R2_mean, mc_sto_infonce_R2_std = summary_statistics(mc_sto_infonce_R2s, axis=0)
+                print("mc(stochastic, linear), dim:{}, mean: {}, std: {}".format(dim, mc_sto_infonce_R2_mean, mc_sto_infonce_R2_std))
+                with open("res/mc_maze_deterministic_infonce_alt/result_dim{}.pkl".format(dim), "rb") as f:
+                    mc_det_infonce_R2s = pickle.load(f)
+                mc_det_infonce_R2s = np.squeeze(mc_det_infonce_R2s)
+                mc_det_infonce_R2_mean, mc_det_infonce_R2_std = summary_statistics(mc_det_infonce_R2s, axis=0)
+                print("mc(deterministic, linear), dim:{}, mean: {}, std: {}".format(dim, mc_det_infonce_R2_mean, mc_det_infonce_R2_std))
+                with open("res/mc_maze_stochastic_infonce_alt/result_dim{}_nonlinear.pkl".format(dim), "rb") as f:
+                    mc_sto_infonce_R2s = pickle.load(f)
+                mc_sto_infonce_R2s = np.squeeze(mc_sto_infonce_R2s)
+                mc_sto_infonce_R2_mean, mc_sto_infonce_R2_std = summary_statistics(mc_sto_infonce_R2s, axis=0)
+                print("mc(stochastic, nonlinear), dim:{}, mean: {}, std: {}".format(dim, mc_sto_infonce_R2_mean, mc_sto_infonce_R2_std))
+                with open("res/mc_maze_deterministic_infonce_alt/result_dim{}_nonlinear.pkl".format(dim), "rb") as f:
+                    mc_det_infonce_R2s = pickle.load(f)
+                mc_det_infonce_R2s = np.squeeze(mc_det_infonce_R2s)
+                mc_det_infonce_R2_mean, mc_det_infonce_R2_std = summary_statistics(mc_det_infonce_R2s, axis=0)
+                print("mc(deterministic, nonlinear), dim:{}, mean: {}, std: {}".format(dim, mc_det_infonce_R2_mean, mc_det_infonce_R2_std))
+                with open("res/mc_pca_sfa_dca/result_cpt.pkl", "rb") as f:
+                    mc_pca_sfa_dca_infonce_R2s = pickle.load(f)
+                print("mc_pca_sfa_dca_infonce_R2s: ", mc_pca_sfa_dca_infonce_R2s)
 
     if do_summarization_R2_CPIC_Baseline:
         # Visualize the R2 improvements

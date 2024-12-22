@@ -417,7 +417,7 @@ if __name__ == "__main__":
         Y_train = Y[:n_train]
         Y_test = Y[n_train:]
         good_ts = None
-        standardize_Y = False
+        standardize_Y = True
     
     # if args.config == "mc_maze_stochastic_infonce_alt_v2":
     #     # !pip install git+https://github.com/neurallatents/nlb_tools.git
@@ -470,17 +470,17 @@ if __name__ == "__main__":
     #     #     data = pickle.load(f)
     #     #     rates, vels = data["rates"], data["vels"]
 
-        X, Y = rates, vels
-        train_test_ratio = 0.8
-        n = X.shape[0]
-        n_train = int(n * train_test_ratio)
-        X_train = X[:n_train]
-        X_test = X[n_train:]
-        Y_train = Y[:n_train]
-        Y_test = Y[n_train:]
+    #     X, Y = rates, vels
+    #     train_test_ratio = 0.8
+    #     n = X.shape[0]
+    #     n_train = int(n * train_test_ratio)
+    #     X_train = X[:n_train]
+    #     X_test = X[n_train:]
+    #     Y_train = Y[:n_train]
+    #     Y_test = Y[n_train:]
 
-        good_ts = None
-        standardize_Y = True
+    #     good_ts = None
+    #     standardize_Y = True
 
     T_pi_vals = np.array(Ts)
     offsets = np.array([5, 10, 15])
