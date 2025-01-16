@@ -65,8 +65,10 @@ if __name__ == "__main__":
         # Plot each trial with a label
         for i in range(m1_sto_infonce_R2s.shape[0]):
             plt.plot(m1_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
-        plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
-        plt.xlabel("Window size")
+        # plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
+        # plt.xlabel("Window size")
+        plt.xticks([0, 1, 2, 3, 4, 5], [50, 100, 150, 200, 250, 300])
+        plt.xlabel("Milliseconds")
         plt.ylabel("R2")
         plt.title("R2 scores for M1 datasets with varying window size")
         # Add legend to show trial labels
@@ -84,8 +86,10 @@ if __name__ == "__main__":
         # Plot each trial with a label
         for i in range(hc_sto_infonce_R2s.shape[0]):
             plt.plot(hc_sto_infonce_R2s[i], label=f'Lag {lags[i]}')
-        plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
-        plt.xlabel("Window size")
+        # plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
+        # plt.xlabel("Window size")
+        plt.xticks([0, 1, 2, 3, 4, 5], [50, 100, 150, 200, 250, 300])
+        plt.xlabel("Milliseconds")
         plt.ylabel("R2")
         plt.title("R2 scores for HC datasets with varying window size")
         # Add legend to show trial labels
@@ -105,14 +109,12 @@ if __name__ == "__main__":
             # Plot each trial with a label
             for j in range(mc_maze_sto_infonce_R2s.shape[0]):
                 plt.plot(mc_maze_sto_infonce_R2s[j], label=f'Lag {lags[j]}')
-            plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
-            plt.xlabel("Window size")
+            # plt.xticks([0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6])
+            # plt.xlabel("Window size")
+            plt.xticks([0, 1, 2, 3, 4, 5], [50, 100, 150, 200, 250, 300])
+            plt.xlabel("Milliseconds")
             plt.ylabel("R2")
             plt.title("R2 scores for MC-MAZE datasets with varying window size")
             # Add legend to show trial labels
             plt.legend()
             plt.savefig("fig/varying_window_sizes/MC-MAZE_cond0_R2_varying_WS_dim{}.png".format(mc_maze_dims[i]))
-
-
-    import pdb; pdb.set_trace()
-
