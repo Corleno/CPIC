@@ -1,0 +1,1 @@
+python code/real_data_experiment_standard_beta.py --config mc_stochastic_infonce_beta
