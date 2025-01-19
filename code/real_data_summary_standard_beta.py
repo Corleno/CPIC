@@ -1,18 +1,19 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
+import numpy as np
 
 
 def plot_CPIC(I_compress, I_predictive, save_file="fig/m1_CPIC_IC.png", xticks=None, yticks=None):
     fig = plt.figure()
-    plt.plot(I_compress, I_predictive)
-    plt.xlabel("Compression Complexity I(X(T),Y(T))")
-    plt.ylabel("Predictive Information I(Y(-T),Y(T))")
+    plt.plot(I_compress, I_predictive, c='k', linewidth=5)
+    plt.xlabel("Compression Complexity I(X(T),Y(T))", fontsize=14)
+    plt.ylabel("Predictive Information I(Y(-T),Y(T))", fontsize=14)
     if xticks:
-        plt.xticks(xticks)
+        plt.xticks(xticks, xticks, fontsize=18)
     if yticks:
-        plt.yticks(yticks)
+        plt.yticks(yticks, yticks, fontsize=18)
+    plt.tight_layout()
     fig.savefig(save_file)
     plt.show()
 
@@ -44,15 +45,15 @@ if __name__ == "__main__":
     #         I_predictive.append(hc_sto_infonce_MIs[0, 0, 1])
     #     plot_CPIC(I_compress, I_predictive, save_file="fig/hc_dim{}_CPIC_IC.png".format(dim), xticks=[0, 167, 334, 501], yticks=[0, 1, 2, 3])
 
-    # for dim in mc_dims:
-    #     I_compress = []
-    #     I_predictive = []
-    #     for beta in betas:
-    #         with open("res/mc_maze_stochastic_infonce_alt_v2_cond0/result_dim{}_standard_beta_{}.pkl".format(dim, beta), "rb") as f:
-    #             hc_sto_infonce_R2s, hc_sto_infonce_MIs = pickle.load(f)
-    #         I_compress.append(hc_sto_infonce_MIs[0, 0, 0])
-    #         I_predictive.append(hc_sto_infonce_MIs[0, 0, 1])
-    #     plot_CPIC(I_compress, I_predictive, save_file="fig/mc_dim{}_CPIC_IC.png".format(dim), )
+    for dim in mc_dims:
+        I_compress = []
+        I_predictive = []
+        for beta in betas:
+            with open("res/mc_maze_stochastic_infonce_beta/result_dim{}_standard_beta_{}.pkl".format(dim, beta), "rb") as f:
+                mc_sto_infonce_R2s, mc_sto_infonce_MIs = pickle.load(f)
+            I_compress.append(mc_sto_infonce_MIs[0, 0, 0])
+            I_predictive.append(mc_sto_infonce_MIs[0, 0, 1])
+        plot_CPIC(I_compress, I_predictive, save_file="fig/mc_dim{}_CPIC_IC.png".format(dim), xticks=[0.0, 27.0, 54.0, 81.0], yticks=[0.0, 2.0, 4.0, 6.0])
 
     import pdb; pdb.set_trace()
 
